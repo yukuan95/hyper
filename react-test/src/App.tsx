@@ -1,50 +1,106 @@
+import {
+  createChart, LineSeries, CandlestickSeries, CrosshairMode
+} from 'lightweight-charts'
+import { useEffect, useRef, memo, useState } from 'react'
+import { state, Color, useConst } from './Store'
 import { ConfigProvider, theme } from 'antd'
-import { useEffect, useRef, memo } from 'react'
-import { state, Color } from './Store'
-import * as lib from './Lib'
-import * as store from './Store'
-import { useSnapshot } from 'valtio'
+import { subscribeKey } from 'valtio/utils'
 import locale from 'antd/locale/zh_CN'
-// import { cx, css } from '@emotion/css'
-import { createChart, LineSeries, CandlestickSeries } from 'lightweight-charts';
+import { cx, css } from '@emotion/css'
+import { useSnapshot } from 'valtio'
+import * as store from './Store'
+import * as lib from './Lib'
 
-const App = memo(() => {
-  const chart: { current: any } = useRef(null)
-  function calculateMA(data: Array<any>, count: number) {
-    const avg = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i < count - 1) {
-        continue;
-      }
-      let sum = 0;
-      for (let j = 0; j < count; j++) {
-        sum += data[i - j].close || data[i - j].value;
-      }
-      avg.push({
-        time: data[i].time,
-        value: Number.parseInt('' + (sum / count))
-      });
-    }
-    return avg;
+const FlexStyle = () => {
+  return {
+    fsbc: css`
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    `,
+    fcc: css`
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+    `,
+    container: css`
+      width: ${useConst.width}px;
+      padding-left: ${useConst.paddingLeft}px;
+      padding-right: ${useConst.paddingRight}px;
+    `,
   }
-  function setData(data: Array<any>) {
-    data = data.map((item: any) => {
+}
+
+const Loading = memo(({ width, border }: {
+  width: number, border: number
+}) => {
+  const style = css`
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    width: ${width}px;
+    height: ${width}px;
+    border-radius: 50%;
+    border-top: ${border}px solid #e2e2e2;
+    border-right: ${border}px solid #e2e2e2;
+    border-bottom: ${border}px solid #e2e2e2;
+    border-left: ${border}px solid #409eff;
+    animation: spin 1.5s linear infinite;
+  `
+  return (<>
+    <div className={cx(style)}></div>
+  </>)
+})
+
+const Candle = memo(() => {
+  const snap = useSnapshot(state)
+  const chart: { current: any } = useRef(null)
+  const data: { current: any } = useRef(null)
+  const [isShowLoading, setIsShowLoading] = useState(true)
+  const flexStyle = FlexStyle()
+
+  function mapCandle(data: Array<any>): Array<any> {
+    return data.map((item: any) => {
       return {
         time: item.t / 1000,
         open: Number(item.o), high: Number(item.h),
         low: Number(item.l), close: Number(item.c),
       }
     })
+  }
+
+  function calculateMA(data: Array<any>, count: number) {
+    const avg = []
+    for (let i of Array.from({ length: data.length }, ((_, i) => i))) {
+      if (i < count - 1) {
+        continue
+      }
+      let sum = 0
+      for (let j of Array.from({ length: count }, ((_, i) => i))) {
+        sum += data[i - j].close
+      }
+      avg.push({ time: data[i].time, value: Number.parseInt('' + (sum / count)) })
+    }
+    return avg
+  }
+
+  function setData(data: Array<any>) {
     const ma8Data = calculateMA(data, 8)
     const ma288Data = calculateMA(data, 288)
     const ma8Series = chart.current.addSeries(LineSeries, {
-      color: '#FF9800', lineWidth: 1, lastValueVisible: false,
+      color: '#4FC1FF', lineWidth: 1, lastValueVisible: false,
       priceLineVisible: false, crosshairMarkerVisible: false,
       priceFormat: {
         type: 'custom', minMove: 0.01, formatter: (price: any) => Number.parseInt(price),
       },
     })
-
     const ma288Series = chart.current.addSeries(LineSeries, {
       color: '#e82ac2', lineWidth: 1, lastValueVisible: false,
       priceLineVisible: false, crosshairMarkerVisible: false,
@@ -52,77 +108,163 @@ const App = memo(() => {
         type: 'custom', minMove: 0.01, formatter: (price: any) => Number.parseInt(price),
       },
     })
-    ma8Series.setData(ma8Data);
-    ma288Series.setData(ma288Data);
-
+    ma8Series.setData(ma8Data)
+    ma288Series.setData(ma288Data)
     const candlestickSeries = chart.current.addSeries(CandlestickSeries);
-    candlestickSeries.setData(data);
+    candlestickSeries.setData(data)
     candlestickSeries.applyOptions({
       priceFormat: {
         type: 'custom', formatter: (price: any) => Number.parseInt(price),
       },
-    });
+    })
     chart.current.timeScale().applyOptions({
       tickMarkFormatter: (time: any) => {
         return lib.milliTimeToStringTime(time * 1000).slice(5, 10)
       },
-    });
+    })
     chart.current.applyOptions({
       localization: {
         timeFormatter: (timestamp: any) => {
           return lib.milliTimeToStringTime(timestamp * 1000).slice(0, 16)
         },
       },
-    });
+    })
+    return { ma8Series, ma288Series, candlestickSeries }
   }
 
+  function getHeight(): number {
+    return snap.isShowCandle ? 350 : 150
+  }
 
-  const onClick = async () => {
-    let data: Array<any> = await store.fetchInfo({
-      "type": "candleSnapshot",
-      "req": {
-        "coin": "BTC", "interval": "15m", "endTime": lib.getNowMilliTime(),
-        "startTime": lib.getNowMilliTime() - lib.timesToMilli({ days: 50 }),
-      }
-    })
-    setData(data)
+  function getWidth(): number {
+    const { width, paddingLeft, paddingRight } = useConst
+    return width - paddingLeft - paddingRight
+  }
+
+  function getBackgroundColor(): string {
+    const n = snap.isLight ? 255 : 1
+    return `rgba(${n}, ${n}, ${n}, 0.2)`
+  }
+
+  const style = {
+    container: css`
+      height: ${getHeight()}px;
+      position: relative;
+    `,
+    loadingC: css`
+      height: ${getHeight()}px;
+      width: ${getWidth()}px;
+      z-index: 2;
+      position: absolute;
+      background: ${getBackgroundColor()};
+      backdrop-filter: blur(5px);
+    `,
   }
 
   useEffect(() => {
-    chart.current = createChart(
-      document.getElementById('chart') as any, { width: 350, height: 150, } as any
-    );
+    async function init() {
+      try {
+        const dataRes: Array<any> = await store.fetchInfo({
+          "type": "candleSnapshot",
+          "req": {
+            "coin": "BTC", "interval": "15m", "endTime": lib.getNowMilliTime(),
+            "startTime": lib.getNowMilliTime() - lib.timesToMilli({ days: 50 }),
+          }
+        })
+        setIsShowLoading(false)
+        data.current = mapCandle(dataRes)
+        const setDataRes = setData(data.current)
+        const { ma8Series, ma288Series, candlestickSeries } = setDataRes
+        subscribeKey(state, 'candle', () => {
+          const candle = mapCandle([state.candle])[0]
+          if (state.candle.t > data.current.at(-1).t) {
+            data.current.push(candle)
+          } else {
+            data.current[data.current.length - 1] = candle
+          }
+          ma8Series.update(calculateMA(data.current, 8).at(-1))
+          ma288Series.update(calculateMA(data.current, 288).at(-1))
+          candlestickSeries.update(data.current.at(-1))
+        })
+      } catch { setIsShowLoading(false) }
+    }
+    init()
+    const darkTheme = {
+      layout: {
+        background: { color: '#141414' },
+        textColor: '#d1d4dc',
+      },
+      grid: {
+        vertLines: { color: 'rgba(42, 46, 57, 0.6)' },
+        horzLines: { color: 'rgba(42, 46, 57, 0.6)' },
+      },
+    }
+    const lightTheme = {
+      layout: {
+        background: { color: '#FFFFFF', },
+        textColor: '#191919',
+      }, grid: {
+        vertLines: { color: 'rgba(197, 203, 206, 0.5)' },
+        horzLines: { color: 'rgba(197, 203, 206, 0.5)' },
+      },
+    }
+    chart.current = createChart(document.getElementById('chart') as any, {
+      width: getWidth(), height: getHeight()
+    } as any)
+    chart.current.applyOptions(snap.isLight ? lightTheme : darkTheme)
+    chart.current.applyOptions({ crosshair: { mode: CrosshairMode.Normal } })
+    subscribeKey(state, 'isShowCandle', () => {
+      chart.current.applyOptions({ width: getWidth(), height: getHeight() })
+    })
+    subscribeKey(state, 'isLight', () => {
+      chart.current.applyOptions(state.isLight ? lightTheme : darkTheme)
+    })
   }, [])
+
   return (<>
-    <div>
-      <div><button onClick={() => onClick()}>onClick</button></div>
-      <div id="chart" style={{ width: 650, height: 350 }} />
+    <div className={cx(flexStyle.container, flexStyle.fcc, style.container)}>
+      <div style={{ zIndex: 1 }} id="chart"></div>
+      {(isShowLoading) ? <div className={cx(style.loadingC, flexStyle.fcc)}>
+        <Loading width={30} border={3}></Loading>
+      </div> : <></>}
     </div>
   </>)
 })
 
 
-// function initWebsocket() {
-//   const socket = new WebSocket('wss://api.hyperliquid.xyz/ws')
-//   socket.onopen = () => {
-//     socket.send(JSON.stringify({
-//       "method": "subscribe",
-//       "subscription": { "type": "allMids" }
-//     }));
-//     socket.send(JSON.stringify({
-//       "method": "subscribe",
-//       "subscription": {
-//         "type": "candle",
-//         "coin": "BTC",
-//         "interval": "15m"  // 1分钟线
-//       }
-//     }));
-//   };
-//   socket.onmessage = (event) => {
-//     const data = JSON.parse(event.data).data
-//     console.log(data?.mids?.BTC ?? data)
-//   };
-// }
+function initWebsocket() {
+  const socket = new WebSocket('wss://api.hyperliquid.xyz/ws')
+  socket.onopen = () => {
+    socket.send(JSON.stringify({
+      "method": "subscribe",
+      "subscription": { "type": "allMids" }
+    }));
+    socket.send(JSON.stringify({
+      "method": "subscribe",
+      "subscription": {
+        "type": "candle",
+        "coin": "BTC",
+        "interval": "15m",
+      }
+    }));
+  };
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      if (data.channel === 'allMids') {
+        const price = Number.parseInt(data?.data?.mids?.BTC)
+        if (!Number.isNaN(price)) {
+          state.price = price
+        }
+      }
+      if (data.channel === 'candle') {
+        if (data?.data) {
+          state.candle = data?.data
+        }
+      }
+    } catch { }
+  }
+}
 
 function initColorScheme() {
   const themeMedia = window.matchMedia("(prefers-color-scheme: light)")
@@ -134,7 +276,7 @@ export default memo(() => {
   const snap = useSnapshot(state)
   useEffect(() => {
     initColorScheme()
-    // initWebsocket()
+    initWebsocket()
   }, [])
   return (
     <ConfigProvider
@@ -153,7 +295,7 @@ export default memo(() => {
         },
       }}
     >
-      <App />
+      <Candle></Candle>
     </ConfigProvider>
   )
 })

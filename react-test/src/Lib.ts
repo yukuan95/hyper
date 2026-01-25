@@ -5,7 +5,6 @@ export async function fetchJson(data: { url: string, headers?: any, method?: any
   headers = headers ?? { 'Content-Type': 'application/json' }
   method = method ?? 'POST'
   body = body ?? {}
-  console.log(url, { method, headers, body: JSON.stringify(body) })
   let res = await fetch(url, { method, headers, body: JSON.stringify(body) })
   return await res.json()
 }
