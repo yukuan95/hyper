@@ -29,7 +29,6 @@ export const state = proxy({
 
 })
 
-
 subscribeKey(state, 'isLight', () => {
   document.body.style.backgroundColor = state.isLight ? Color.white : Color.black
 })

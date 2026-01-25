@@ -10,6 +10,7 @@ import { cx, css } from '@emotion/css'
 import { useSnapshot } from 'valtio'
 import * as store from './Store'
 import * as lib from './Lib'
+import { Button } from 'antd'
 
 const FlexStyle = () => {
   return {
@@ -132,8 +133,8 @@ const Candle = memo(() => {
     return { ma8Series, ma288Series, candlestickSeries }
   }
 
-  function getHeight(): number {
-    return snap.isShowCandle ? 350 : 150
+  function getHeight(isShowCandle = snap.isShowCandle): number {
+    return isShowCandle ? 350 : 150
   }
 
   function getWidth(): number {
@@ -154,11 +155,17 @@ const Candle = memo(() => {
     loadingC: css`
       height: ${getHeight()}px;
       width: ${getWidth()}px;
-      z-index: 2;
+      z-index: 3;
       position: absolute;
       background: ${getBackgroundColor()};
       backdrop-filter: blur(5px);
     `,
+    button: css`
+      z-index: 2;
+      position: absolute;
+      top: 0;
+      right: 70px;
+    `
   }
 
   useEffect(() => {
@@ -186,7 +193,9 @@ const Candle = memo(() => {
           ma288Series.update(calculateMA(data.current, 288).at(-1))
           candlestickSeries.update(data.current.at(-1))
         })
-      } catch { setIsShowLoading(false) }
+      } catch {
+        setIsShowLoading(false)
+      }
     }
     init()
     const darkTheme = {
@@ -209,12 +218,19 @@ const Candle = memo(() => {
       },
     }
     chart.current = createChart(document.getElementById('chart') as any, {
-      width: getWidth(), height: getHeight()
+      width: getWidth(), height: getHeight(),
+      localization: {
+        priceFormatter: (price: any) => {
+          return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 0, maximumFractionDigits: 0,
+          }).format(price)
+        },
+      },
     } as any)
     chart.current.applyOptions(snap.isLight ? lightTheme : darkTheme)
     chart.current.applyOptions({ crosshair: { mode: CrosshairMode.Normal } })
     subscribeKey(state, 'isShowCandle', () => {
-      chart.current.applyOptions({ width: getWidth(), height: getHeight() })
+      chart.current.applyOptions({ width: getWidth(), height: getHeight(state.isShowCandle) })
     })
     subscribeKey(state, 'isLight', () => {
       chart.current.applyOptions(state.isLight ? lightTheme : darkTheme)
@@ -224,9 +240,20 @@ const Candle = memo(() => {
   return (<>
     <div className={cx(flexStyle.container, flexStyle.fcc, style.container)}>
       <div style={{ zIndex: 1 }} id="chart"></div>
-      {(isShowLoading) ? <div className={cx(style.loadingC, flexStyle.fcc)}>
-        <Loading width={30} border={3}></Loading>
-      </div> : <></>}
+      {(isShowLoading) ?
+        <div className={cx(style.loadingC, flexStyle.fcc)}>
+          <Loading width={30} border={3}></Loading>
+        </div> :
+        <div className={cx(style.button)}>
+          {snap.isShowCandle ?
+            <Button onClick={() => state.isShowCandle = !snap.isShowCandle} style={{ width: '30px', height: '30px', padding: '0' }}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8m7-8a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 1 1 .708-.708L7.5 4.293V.5A.5.5 0 0 1 8 0m-.5 11.707-1.146 1.147a.5.5 0 0 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 11.707V15.5a.5.5 0 0 1-1 0z" />
+            </svg></Button> :
+            <Button onClick={() => state.isShowCandle = !snap.isShowCandle} style={{ width: '30px', height: '30px', padding: '0' }}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8M7.646.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 1.707V5.5a.5.5 0 0 1-1 0V1.707L6.354 2.854a.5.5 0 1 1-.708-.708zM8 10a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 14.293V10.5A.5.5 0 0 1 8 10" />
+            </svg></Button>
+          }
+        </div>}
     </div>
   </>)
 })
@@ -272,14 +299,22 @@ function initColorScheme() {
   themeMedia.onchange = ({ matches }) => state.isLight = matches
 }
 
+const App = memo(() => {
+  return <>
+    <Candle></Candle>
+  </>
+})
+
 export default memo(() => {
   const snap = useSnapshot(state)
   useEffect(() => {
     initColorScheme()
     initWebsocket()
   }, [])
+  const f = FlexStyle()
   return (
     <ConfigProvider
+      wave={{ disabled: true }}
       locale={locale}
       theme={{
         algorithm: snap.isLight ? theme.defaultAlgorithm : theme.darkAlgorithm,
@@ -295,7 +330,9 @@ export default memo(() => {
         },
       }}
     >
-      <Candle></Candle>
+      <div className={f.fcc}>
+        <App></App>
+      </div>
     </ConfigProvider>
   )
 })
