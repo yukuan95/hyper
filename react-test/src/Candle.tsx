@@ -1,7 +1,7 @@
 import {
   createChart, LineSeries, CandlestickSeries, CrosshairMode
 } from 'lightweight-charts'
-import { useState, useEffect, useRef, memo } from 'react'
+import { useState, useEffect, memo, useMemo } from 'react'
 import { subscribeKey } from 'valtio/utils'
 import { state, useConst } from './Store'
 import { cx, css } from '@emotion/css'
@@ -11,6 +11,8 @@ import { Loading } from './Comp'
 import * as store from './Store'
 import { Button } from 'antd'
 import * as lib from './Lib'
+
+type Data = { chart: any; candleData: any; ma8Series: any; ma288Series: any; candlestickSeries: any; }
 
 function getMaColor(): { ma8Color: string, ma288Color: string } {
   const ma8Color = '#4FC1FF'
@@ -92,44 +94,42 @@ function getCandleStyle(height: number, background: string) {
   }
 }
 
-function setData(data: Array<any>, chart: { current: any }, setMaPrice: any,
-  ma8Series: { current: any }, ma288Series: { current: any }, candlestickSeries: { current: any },
-) {
+function setData(data: Data, setMaPrice: any) {
   const { ma8Color, ma288Color } = getMaColor()
-  const ma8Data = calculateMA(data, 8)
-  const ma288Data = calculateMA(data, 288)
+  const ma8Data = calculateMA(data.candleData, 8)
+  const ma288Data = calculateMA(data.candleData, 288)
   const ma8Price = ma8Data.at(-1)?.value ?? 0
   const ma288Price = ma288Data.at(-1)?.value ?? 0
   setMaPrice({ ma8Price, ma288Price })
-  ma8Series.current = chart.current.addSeries(LineSeries, {
+  data.ma8Series = data.chart.addSeries(LineSeries, {
     color: ma8Color, lineWidth: 1, lastValueVisible: false,
     priceLineVisible: false, crosshairMarkerVisible: false,
     priceFormat: {
       type: 'custom', minMove: 0.01, formatter: (price: any) => Number.parseInt(price),
     },
   })
-  ma288Series.current = chart.current.addSeries(LineSeries, {
+  data.ma288Series = data.chart.addSeries(LineSeries, {
     color: ma288Color, lineWidth: 1, lastValueVisible: false,
     priceLineVisible: false, crosshairMarkerVisible: false,
     priceFormat: {
       type: 'custom', minMove: 0.01, formatter: (price: any) => Number.parseInt(price),
     },
   })
-  ma8Series.current.setData(ma8Data)
-  ma288Series.current.setData(ma288Data)
-  candlestickSeries.current = chart.current.addSeries(CandlestickSeries);
-  candlestickSeries.current.setData(data)
-  candlestickSeries.current.applyOptions({
+  data.ma8Series.setData(ma8Data)
+  data.ma288Series.setData(ma288Data)
+  data.candlestickSeries = data.chart.addSeries(CandlestickSeries);
+  data.candlestickSeries.setData(data.candleData)
+  data.candlestickSeries.applyOptions({
     priceFormat: {
       type: 'custom', formatter: (price: any) => Number.parseInt(price),
     },
   })
-  chart.current.timeScale().applyOptions({
+  data.chart.timeScale().applyOptions({
     tickMarkFormatter: (time: any) => {
       return lib.milliTimeToStringTime(time * 1000).slice(5, 10)
     },
   })
-  chart.current.applyOptions({
+  data.chart.applyOptions({
     localization: {
       timeFormatter: (timestamp: any) => {
         return lib.milliTimeToStringTime(timestamp * 1000).slice(0, 16)
@@ -138,9 +138,7 @@ function setData(data: Array<any>, chart: { current: any }, setMaPrice: any,
   })
 }
 
-async function init(setIsShowLoading: any, setMaPrice: any, data: { current: any }, chart: { current: any },
-  ma8Series: { current: any }, ma288Series: { current: any }, candlestickSeries: { current: any },
-) {
+async function init(data: Data, setIsShowLoading: any, setMaPrice: any) {
   try {
     const dataRes: Array<any> = await store.fetchInfo({
       "type": "candleSnapshot",
@@ -150,8 +148,8 @@ async function init(setIsShowLoading: any, setMaPrice: any, data: { current: any
       }
     })
     setIsShowLoading(false)
-    data.current = mapCandle(dataRes)
-    setData(data.current, chart, setMaPrice, ma8Series, ma288Series, candlestickSeries)
+    data.candleData = mapCandle(dataRes)
+    setData(data, setMaPrice)
   } catch {
     setIsShowLoading(false)
   }
@@ -180,8 +178,8 @@ function getChartTheme() {
   return { darkTheme, lightTheme }
 }
 
-function createChartF(chart: { current: any }, chartEl: any, isShowCandle: boolean, isLight: boolean) {
-  chart.current = createChart(chartEl, {
+function createChartF(data: Data, chartEl: any, isShowCandle: boolean, isLight: boolean): void {
+  data.chart = createChart(chartEl, {
     width: getWidth(), height: getHeight(isShowCandle),
     localization: {
       priceFormatter: (price: any) => {
@@ -192,32 +190,34 @@ function createChartF(chart: { current: any }, chartEl: any, isShowCandle: boole
     },
   } as any)
   const { lightTheme, darkTheme } = getChartTheme()
-  chart.current.applyOptions(isLight ? lightTheme : darkTheme)
-  chart.current.applyOptions({ crosshair: { mode: CrosshairMode.Normal } })
+  data.chart.applyOptions(isLight ? lightTheme : darkTheme)
+  data.chart.applyOptions({ crosshair: { mode: CrosshairMode.Normal } })
 }
 
-function subscribe(chart: { current: any }, data: { current: any }, setMaPrice: any,
-  ma8Series: { current: any }, ma288Series: { current: any }, candlestickSeries: { current: any }) {
+function subscribe(data: Data, setMaPrice: any) {
   const unSubscribeCandle = subscribeKey(state, 'candle', () => {
-    const candle = mapCandle([state.candle])[0]
-    if (state.candle.t > data.current.at(-1).t) {
-      data.current.push(candle)
-    } else {
-      data.current[data.current.length - 1] = candle
+    if (!data.candleData) {
+      return
     }
-    const ma8Data = calculateMA(data.current, 8).at(-1)
-    const ma288Data = calculateMA(data.current, 288).at(-1)
-    ma8Series.current.update(ma8Data)
-    ma288Series.current.update(ma288Data)
+    const candle = mapCandle([state.candle])[0]
+    if (candle.time > (data.candleData.at(-1).time)) {
+      data.candleData.push(candle)
+    } else {
+      data.candleData[data.candleData.length - 1] = candle
+    }
+    const ma8Data = calculateMA(data.candleData, 8).at(-1)
+    const ma288Data = calculateMA(data.candleData, 288).at(-1)
+    data.ma8Series.update(ma8Data)
+    data.ma288Series.update(ma288Data)
     setMaPrice({
       ma8Price: ma8Data?.value ?? 0,
       ma288Price: ma288Data?.value ?? 0,
     })
-    candlestickSeries.current.update(data.current.at(-1))
+    data.candlestickSeries.update(data.candleData.at(-1))
   })
   const unSubscribeIsLight = subscribeKey(state, 'isLight', () => {
     const { lightTheme, darkTheme } = getChartTheme()
-    chart.current.applyOptions(state.isLight ? lightTheme : darkTheme)
+    data.chart.applyOptions(state.isLight ? lightTheme : darkTheme)
   })
   const unSubscribe = () => {
     unSubscribeCandle()
@@ -230,11 +230,10 @@ export const Candle = memo(() => {
   const [maPrice, setMaPrice] = useState({ ma8Price: 0, ma288Price: 0, })
   const [isShowLoading, setIsShowLoading] = useState(true)
   const [isShowCandle, setIsShowCandle] = useState(false)
-  const chart: { current: any } = useRef(null)
-  const data: { current: any } = useRef(null)
-  const ma8Series: { current: any } = useRef(null)
-  const ma288Series: { current: any } = useRef(null)
-  const candlestickSeries: { current: any } = useRef(null)
+  const data: Data = useMemo(() => ({
+    chart: null as any, candleData: null as any, ma8Series: null as any,
+    ma288Series: null as any, candlestickSeries: null as any,
+  }), []);
   const snap = useSnapshot(state)
   const flexStyle = FlexStyle()
   const style = getCandleStyle(
@@ -242,15 +241,14 @@ export const Candle = memo(() => {
   )
   useEffect(() => {
     const chartEl = document.getElementById('chart')
-    createChartF(chart, chartEl, isShowCandle, snap.isLight)
-    init(setIsShowLoading, setMaPrice, data, chart, ma8Series, ma288Series, candlestickSeries)
-    const unSubscribe = subscribe(chart, data, setMaPrice, ma8Series, ma288Series, candlestickSeries)
+    createChartF(data, chartEl, isShowCandle, snap.isLight)
+    init(data, setIsShowLoading, setMaPrice)
+    const unSubscribe = subscribe(data, setMaPrice)
     return () => unSubscribe()
   }, [])
   useEffect(() => {
-    chart.current.applyOptions({ width: getWidth(), height: getHeight(isShowCandle) })
+    data.chart.applyOptions({ width: getWidth(), height: getHeight(isShowCandle) })
   }, [isShowCandle])
-
   return (<>
     <div className={cx(flexStyle.container, flexStyle.fcc, style.container)}>
       <div style={{ zIndex: 1 }} id="chart"></div>
