@@ -225,8 +225,9 @@ export const Candle = memo(() => {
     getHeight(isShowCandle), getBackgroundColor(snap.isLight)
   )
   useEffect(() => {
+    const chartEl = document.getElementById('chart')
+    createChartF(chart, chartEl, isShowCandle, snap.isLight)
     init(setIsShowLoading, setMaPrice, data, chart)
-    createChartF(chart, document.getElementById('chart'), isShowCandle, snap.isLight)
     const unSubscribe = subscribeKey(state, 'isLight', () => {
       const { lightTheme, darkTheme } = getChartTheme()
       chart.current.applyOptions(state.isLight ? lightTheme : darkTheme)
