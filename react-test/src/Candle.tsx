@@ -92,32 +92,34 @@ function getCandleStyle(height: number, background: string) {
   }
 }
 
-function setData(data: Array<any>, chart: { current: any })
-  : { ma8Series: any; ma288Series: any; candlestickSeries: any; ma8Price: number; ma288Price: number; } {
+function setData(data: Array<any>, chart: { current: any }, setMaPrice: any,
+  ma8Series: { current: any }, ma288Series: { current: any }, candlestickSeries: { current: any },
+) {
   const { ma8Color, ma288Color } = getMaColor()
   const ma8Data = calculateMA(data, 8)
   const ma288Data = calculateMA(data, 288)
   const ma8Price = ma8Data.at(-1)?.value ?? 0
   const ma288Price = ma288Data.at(-1)?.value ?? 0
-  const ma8Series = chart.current.addSeries(LineSeries, {
+  setMaPrice({ ma8Price, ma288Price })
+  ma8Series.current = chart.current.addSeries(LineSeries, {
     color: ma8Color, lineWidth: 1, lastValueVisible: false,
     priceLineVisible: false, crosshairMarkerVisible: false,
     priceFormat: {
       type: 'custom', minMove: 0.01, formatter: (price: any) => Number.parseInt(price),
     },
   })
-  const ma288Series = chart.current.addSeries(LineSeries, {
+  ma288Series.current = chart.current.addSeries(LineSeries, {
     color: ma288Color, lineWidth: 1, lastValueVisible: false,
     priceLineVisible: false, crosshairMarkerVisible: false,
     priceFormat: {
       type: 'custom', minMove: 0.01, formatter: (price: any) => Number.parseInt(price),
     },
   })
-  ma8Series.setData(ma8Data)
-  ma288Series.setData(ma288Data)
-  const candlestickSeries = chart.current.addSeries(CandlestickSeries);
-  candlestickSeries.setData(data)
-  candlestickSeries.applyOptions({
+  ma8Series.current.setData(ma8Data)
+  ma288Series.current.setData(ma288Data)
+  candlestickSeries.current = chart.current.addSeries(CandlestickSeries);
+  candlestickSeries.current.setData(data)
+  candlestickSeries.current.applyOptions({
     priceFormat: {
       type: 'custom', formatter: (price: any) => Number.parseInt(price),
     },
@@ -134,10 +136,11 @@ function setData(data: Array<any>, chart: { current: any })
       },
     },
   })
-  return { ma8Series, ma288Series, candlestickSeries, ma8Price, ma288Price }
 }
 
-async function init(setIsShowLoading: any, setMaPrice: any, data: { current: any }, chart: { current: any }) {
+async function init(setIsShowLoading: any, setMaPrice: any, data: { current: any }, chart: { current: any },
+  ma8Series: { current: any }, ma288Series: { current: any }, candlestickSeries: { current: any },
+) {
   try {
     const dataRes: Array<any> = await store.fetchInfo({
       "type": "candleSnapshot",
@@ -148,27 +151,7 @@ async function init(setIsShowLoading: any, setMaPrice: any, data: { current: any
     })
     setIsShowLoading(false)
     data.current = mapCandle(dataRes)
-    const setDataRes = setData(data.current, chart)
-    const { ma8Series, ma288Series, candlestickSeries } = setDataRes
-    const { ma8Price, ma288Price } = setDataRes
-    setMaPrice({ ma8Price, ma288Price })
-    subscribeKey(state, 'candle', () => {
-      const candle = mapCandle([state.candle])[0]
-      if (state.candle.t > data.current.at(-1).t) {
-        data.current.push(candle)
-      } else {
-        data.current[data.current.length - 1] = candle
-      }
-      const ma8Data = calculateMA(data.current, 8).at(-1)
-      const ma288Data = calculateMA(data.current, 288).at(-1)
-      ma8Series.update(ma8Data)
-      ma288Series.update(ma288Data)
-      setMaPrice({
-        ma8Price: ma8Data?.value ?? 0,
-        ma288Price: ma288Data?.value ?? 0,
-      })
-      candlestickSeries.update(data.current.at(-1))
-    })
+    setData(data.current, chart, setMaPrice, ma8Series, ma288Series, candlestickSeries)
   } catch {
     setIsShowLoading(false)
   }
@@ -213,12 +196,45 @@ function createChartF(chart: { current: any }, chartEl: any, isShowCandle: boole
   chart.current.applyOptions({ crosshair: { mode: CrosshairMode.Normal } })
 }
 
+function subscribe(chart: { current: any }, data: { current: any }, setMaPrice: any,
+  ma8Series: { current: any }, ma288Series: { current: any }, candlestickSeries: { current: any }) {
+  const unSubscribeCandle = subscribeKey(state, 'candle', () => {
+    const candle = mapCandle([state.candle])[0]
+    if (state.candle.t > data.current.at(-1).t) {
+      data.current.push(candle)
+    } else {
+      data.current[data.current.length - 1] = candle
+    }
+    const ma8Data = calculateMA(data.current, 8).at(-1)
+    const ma288Data = calculateMA(data.current, 288).at(-1)
+    ma8Series.current.update(ma8Data)
+    ma288Series.current.update(ma288Data)
+    setMaPrice({
+      ma8Price: ma8Data?.value ?? 0,
+      ma288Price: ma288Data?.value ?? 0,
+    })
+    candlestickSeries.current.update(data.current.at(-1))
+  })
+  const unSubscribeIsLight = subscribeKey(state, 'isLight', () => {
+    const { lightTheme, darkTheme } = getChartTheme()
+    chart.current.applyOptions(state.isLight ? lightTheme : darkTheme)
+  })
+  const unSubscribe = () => {
+    unSubscribeCandle()
+    unSubscribeIsLight()
+  }
+  return unSubscribe
+}
+
 export const Candle = memo(() => {
   const [maPrice, setMaPrice] = useState({ ma8Price: 0, ma288Price: 0, })
   const [isShowLoading, setIsShowLoading] = useState(true)
   const [isShowCandle, setIsShowCandle] = useState(false)
   const chart: { current: any } = useRef(null)
   const data: { current: any } = useRef(null)
+  const ma8Series: { current: any } = useRef(null)
+  const ma288Series: { current: any } = useRef(null)
+  const candlestickSeries: { current: any } = useRef(null)
   const snap = useSnapshot(state)
   const flexStyle = FlexStyle()
   const style = getCandleStyle(
@@ -227,11 +243,8 @@ export const Candle = memo(() => {
   useEffect(() => {
     const chartEl = document.getElementById('chart')
     createChartF(chart, chartEl, isShowCandle, snap.isLight)
-    init(setIsShowLoading, setMaPrice, data, chart)
-    const unSubscribe = subscribeKey(state, 'isLight', () => {
-      const { lightTheme, darkTheme } = getChartTheme()
-      chart.current.applyOptions(state.isLight ? lightTheme : darkTheme)
-    })
+    init(setIsShowLoading, setMaPrice, data, chart, ma8Series, ma288Series, candlestickSeries)
+    const unSubscribe = subscribe(chart, data, setMaPrice, ma8Series, ma288Series, candlestickSeries)
     return () => unSubscribe()
   }, [])
   useEffect(() => {

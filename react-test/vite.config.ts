@@ -12,9 +12,7 @@ export default defineConfig({
         manualChunks(id: string) {
           if (id.slice(-2) === 'js') {
             if (id.includes('node_modules')) {
-              if (id.includes('echarts')) {
-                return 'echarts'
-              } else if (id.includes('ant')) {
+              if (id.includes('ant')) {
                 return 'antd'
               }
             }
