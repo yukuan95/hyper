@@ -104,26 +104,15 @@ function setData(data: Data, setMaPrice: any) {
   data.ma8Series = data.chart.addSeries(LineSeries, {
     color: ma8Color, lineWidth: 1, lastValueVisible: false,
     priceLineVisible: false, crosshairMarkerVisible: false,
-    priceFormat: {
-      type: 'custom', minMove: 0.01, formatter: (price: any) => Number.parseInt(price),
-    },
   })
   data.ma288Series = data.chart.addSeries(LineSeries, {
     color: ma288Color, lineWidth: 1, lastValueVisible: false,
     priceLineVisible: false, crosshairMarkerVisible: false,
-    priceFormat: {
-      type: 'custom', minMove: 0.01, formatter: (price: any) => Number.parseInt(price),
-    },
   })
   data.ma8Series.setData(ma8Data)
   data.ma288Series.setData(ma288Data)
   data.candlestickSeries = data.chart.addSeries(CandlestickSeries);
   data.candlestickSeries.setData(data.candleData)
-  data.candlestickSeries.applyOptions({
-    priceFormat: {
-      type: 'custom', formatter: (price: any) => Number.parseInt(price),
-    },
-  })
   data.chart.timeScale().applyOptions({
     tickMarkFormatter: (time: any) => {
       return lib.milliTimeToStringTime(time * 1000).slice(5, 10)
