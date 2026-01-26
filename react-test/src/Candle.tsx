@@ -125,6 +125,15 @@ function setData(data: Data, setMaPrice: any) {
       },
     },
   })
+  data.chart.applyOptions({
+    localization: {
+      priceFormatter: (price: any) => {
+        return new Intl.NumberFormat('en-US', {
+          minimumFractionDigits: 0, maximumFractionDigits: 0,
+        }).format(price)
+      },
+    },
+  })
 }
 
 async function init(data: Data, setIsShowLoading: any, setMaPrice: any) {
@@ -169,14 +178,7 @@ function getChartTheme() {
 
 function createChartF(data: Data, chartEl: any, isShowCandle: boolean, isLight: boolean): void {
   data.chart = createChart(chartEl, {
-    width: getWidth(), height: getHeight(isShowCandle),
-    localization: {
-      priceFormatter: (price: any) => {
-        return new Intl.NumberFormat('en-US', {
-          minimumFractionDigits: 0, maximumFractionDigits: 0,
-        }).format(price)
-      },
-    },
+    width: getWidth(), height: getHeight(isShowCandle)
   } as any)
   const { lightTheme, darkTheme } = getChartTheme()
   data.chart.applyOptions(isLight ? lightTheme : darkTheme)
