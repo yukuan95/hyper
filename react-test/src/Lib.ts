@@ -9,8 +9,8 @@ export async function fetchJson(data: { url: string, headers?: any, method?: any
   return await res.json()
 }
 
-export function mul(n1: number, n2: number): number {
-  return Number(Decimal(n1).mul(Decimal(n2)))
+export function add(n1: number, n2: number): number {
+  return Number(Decimal(n1).add(Decimal(n2)))
 }
 
 export function timesToMilli(times: { days?: number, hours?: number, minutes?: number, seconds?: number }): number {

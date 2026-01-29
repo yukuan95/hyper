@@ -1,5 +1,5 @@
-import { proxy } from 'valtio'
 import { subscribeKey } from 'valtio/utils'
+import { proxy } from 'valtio'
 import * as lib from './Lib'
 
 export const useConst = {
@@ -9,6 +9,7 @@ export const useConst = {
 }
 
 export const CONST = {
+  WsUrl: 'wss://api.hyperliquid.xyz/ws',
   InfoUrl: 'https://api.hyperliquid.xyz/info',
   AccountAddress: "0x5B84b15A72096f7908B44A33d90FC03B59c02bb3",
 }
@@ -23,8 +24,8 @@ export async function fetchUserInfo(body: any): Promise<any> {
 
 export const state = proxy({
   isLight: window.matchMedia("(prefers-color-scheme: light)").matches as boolean,
-  candle: null as null | any,
-  price: 0 as number,
+  candle: null as null | any, price: 0 as number, chg24Hour: 0 as number,
+  position: null as { entryPrice: string, positionValue: string, unrealizedPnl: string } | null
 })
 
 subscribeKey(state, 'isLight', () => {

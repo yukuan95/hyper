@@ -94,6 +94,18 @@ function getCandleStyle(height: number, background: string) {
   }
 }
 
+function setChg24Hour(candleData: Array<{ close: number; time: number; }>) {
+  if (candleData.length > 0) {
+    const value1 = candleData.at(-1)!.close
+    const value2 = candleData.find(({ time }) => {
+      return time === candleData.at(-1)!.time - lib.timesToMilli({ days: 1 }) / 1000
+    })?.close
+    if (value2) {
+      console.log((value1 - value2) / value2)
+    }
+  }
+}
+
 function setData(data: Data, setMaPrice: any) {
   const { ma8Color, ma288Color } = getMaColor()
   const ma8Data = calculateMA(data.candleData, 8)
@@ -147,6 +159,7 @@ async function init(data: Data, setIsShowLoading: any, setMaPrice: any) {
     })
     setIsShowLoading(false)
     data.candleData = mapCandle(dataRes)
+    setChg24Hour(data.candleData)
     setData(data, setMaPrice)
   } catch {
     setIsShowLoading(false)
@@ -158,8 +171,7 @@ function getChartTheme() {
     layout: {
       background: { color: '#1F262F' },
       textColor: '#d1d4dc',
-    },
-    grid: {
+    }, grid: {
       vertLines: { color: 'rgba(42, 46, 57, 0.6)' },
       horzLines: { color: 'rgba(42, 46, 57, 0.6)' },
     },
@@ -196,6 +208,7 @@ function subscribe(data: Data, setMaPrice: any) {
     } else {
       data.candleData[data.candleData.length - 1] = candle
     }
+    setChg24Hour(data.candleData)
     const ma8Data = calculateMA(data.candleData, 8).at(-1)
     const ma288Data = calculateMA(data.candleData, 288).at(-1)
     data.ma8Series.update(ma8Data)
