@@ -1,4 +1,7 @@
 import { Decimal } from "decimal.js"
+import _numeral from 'numeral'
+
+export const numeral = (_numeral as any).default || _numeral
 
 export async function fetchJson(data: { url: string, headers?: any, method?: any, body?: any }): Promise<any> {
   let { url, headers, method, body } = data

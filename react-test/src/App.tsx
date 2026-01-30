@@ -4,8 +4,9 @@ import { useEffect, memo } from 'react'
 import { useSnapshot } from 'valtio'
 import { FlexStyle } from './Css'
 import { Candle } from './Candle'
-import * as store from './Store'
-import * as lib from './Lib'
+import { Price } from './Price'
+import { numeral } from './Lib'
+import { Line } from './Comp'
 
 function initWebsocket() {
   const socket = new WebSocket(CONST.WsUrl)
@@ -37,6 +38,7 @@ function initWebsocket() {
         const price = Number.parseFloat(data?.data?.mids?.BTC)
         if (!Number.isNaN(price)) {
           state.price = price
+          document.title = numeral(state.price).format('0,0.0')
         }
       }
       if (data.channel === 'candle') {
@@ -65,85 +67,14 @@ function initColorScheme() {
   themeMedia.onchange = ({ matches }) => state.isLight = matches
 }
 
-async function getValueHistory(): Promise<{
-  accountValue: Array<{ time: string, value: number }>;
-  totalPnL: Array<{ time: string, value: number }>;
-}> {
-  const res: any = await lib.fetchJson({
-    url: CONST.InfoUrl, method: 'POST',
-    body: { "type": "portfolio", "user": CONST.AccountAddress }
-  })
-  const his = res?.find((item: any) => item?.[0] === 'allTime')?.[1] ?? {}
-  const accountValueHistory = his.accountValueHistory ?? []
-  const pnlHistory = his.pnlHistory ?? []
-  return {
-    accountValue: accountValueHistory.map((item: any) => {
-      return { time: lib.milliTimeToStringTime(item[0]), value: Number(item[1]) }
-    }),
-    totalPnL: pnlHistory.map((item: any) => {
-      return { time: lib.milliTimeToStringTime(item[0]), value: Number(item[1]) }
-    })
-  }
-}
-
-async function getUserFills(): Promise<{
-  time: string, side: string, price: number, size: number, fee: number, closedPnl: number,
-}> {
-  let data: any = await store.fetchInfo({
-    "type": "userFills", "user": CONST.AccountAddress
-  }) ?? []
-  data = data.filter((item: any) => item.coin === 'BTC').map((item: any) => {
-    let side = item.side
-    if (item.side === 'A') {
-      side = 'SHORT'
-    }
-    if (item.side === 'B') {
-      side = 'LONG'
-    }
-    return {
-      time: lib.milliTimeToStringTime(item.time),
-      side: side, price: Number(item.px),
-      closedPnl: Number(item.closedPnl),
-      fee: Number(item.fee), size: Number(item.sz),
-    }
-  })
-  data = data.reverse()
-  const m = new Map<string, Array<any>>()
-  for (const item of data) {
-    const key = item.time + item.side
-    if (m.has(key)) {
-      m.get(key)?.push(item)
-    } else {
-      m.set(key, [item])
-    }
-  }
-  data = []
-  for (const value of m.values()) {
-    const time = value[0].time
-    const side = value[0].side
-    const priceTotal = value.map((item) => item.price).reduce((a, b) => a + b, 0)
-    const price = Number.parseInt('' + priceTotal / value.length)
-    const size = value.map((item) => item.size).reduce((a, b) => lib.add(a, b), 0)
-    const fee = value.map((item) => item.fee).reduce((a, b) => lib.add(a, b), 0)
-    const closedPnl = value.map((item) => item.closedPnl).reduce((a, b) => lib.add(a, b), 0)
-    data.push({ time, side, price, size, fee, closedPnl })
-  }
-  for (let i = 0; i < data.length; i++) {
-    if (data[i].closedPnl === 0) {
-      if (data[i - 1]) {
-        data[i - 1].side = 'Hedge'
-      }
-    }
-  }
-  return data
-}
-
 const App = memo(() => {
-  async function a() {
-    await getUserFills()
-  }
   return <>
-    <div><button onClick={() => a()}>123</button></div>
+    <div><button onClick={() => state.isLight = !state.isLight}>button</button></div>
+    <div style={{ height: '30px' }}></div>
+    <Price></Price>
+    <div style={{ height: '15px' }}></div>
+    <Line></Line>
+    <div style={{ height: '15px' }}></div>
     <Candle></Candle>
   </>
 })
@@ -162,8 +93,8 @@ export default memo(() => {
         algorithm: snap.isLight ? theme.defaultAlgorithm : theme.darkAlgorithm,
         components: {
           Tooltip: {
-            colorBgSpotlight: snap.isLight ? Color.white : Color.gray,
-            colorTextLightSolid: snap.isLight ? Color.gray : Color.white,
+            colorBgSpotlight: snap.isLight ? Color.white : Color.blackGray,
+            colorTextLightSolid: snap.isLight ? Color.blackGray : Color.white,
           },
           Table: {
             cellPaddingBlockSM: 0,
@@ -172,7 +103,7 @@ export default memo(() => {
         },
       }}
     >
-      <div className={f.fcc}>
+      <div className={f.fColumnCenter}>
         <App></App>
       </div>
     </ConfigProvider>

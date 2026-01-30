@@ -36,7 +36,8 @@ subscribeKey(state, 'isLight', () => {
 export enum Color {
   'white' = '#FFFFFFFF',
   'black' = '#292929FF',
-  'gray' = '#505050FF',
+  'whiteGray' = '#FFFFFF99',
+  'blackGray' = '#505050FF',
   'red' = '#F23645FF',
   'green' = '#089981FF',
 }

@@ -56,44 +56,6 @@ function getWidth(): number {
   return width - paddingLeft - paddingRight
 }
 
-function getBackgroundColor(isLight: boolean): string {
-  const color = isLight ? `255,255,255` : `31,38,47`
-  return `rgba(${color}}, 0.2)`
-}
-
-function getCandleStyle(height: number, background: string) {
-  return {
-    container: css`
-      height: ${height}px;
-      position: relative;
-    `,
-    loadingC: css`
-      height: ${height}px;
-      width: ${getWidth()}px;
-      z-index: 3;
-      position: absolute;
-      background: ${background};
-      backdrop-filter: blur(5px);
-    `,
-    button: css`
-      z-index: 2;
-      position: absolute;
-      top: 0;
-      right: 70px;
-    `,
-    legend: css`
-      z-index: 2;
-      position: absolute;
-      top: 0;
-      left: 10px;
-      font-size: 12px;
-      display: flex;
-      gap: 10px;
-      user-select: none;
-    `,
-  }
-}
-
 function setChg24Hour(candleData: Array<{ close: number; time: number; }>) {
   if (candleData.length > 0) {
     const value1 = candleData.at(-1)!.close
@@ -101,7 +63,7 @@ function setChg24Hour(candleData: Array<{ close: number; time: number; }>) {
       return time === candleData.at(-1)!.time - lib.timesToMilli({ days: 1 }) / 1000
     })?.close
     if (value2) {
-      console.log((value1 - value2) / value2)
+      state.chg24Hour = (value1 - value2) / value2
     }
   }
 }
@@ -230,6 +192,39 @@ function subscribe(data: Data, setMaPrice: any) {
   return unSubscribe
 }
 
+function getCandleStyle(height: number) {
+  return {
+    container: css`
+      height: ${height}px;
+      position: relative;
+    `,
+    loadingC: css`
+      height: ${height}px;
+      width: ${getWidth()}px;
+      z-index: 3;
+      position: absolute;
+      background: transparent;
+      backdrop-filter: blur(3px);
+    `,
+    button: css`
+      z-index: 2;
+      position: absolute;
+      top: 0;
+      right: 70px;
+    `,
+    legend: css`
+      z-index: 2;
+      position: absolute;
+      top: 0;
+      left: 10px;
+      font-size: 12px;
+      display: flex;
+      gap: 10px;
+      user-select: none;
+    `,
+  }
+}
+
 export const Candle = memo(() => {
   const [maPrice, setMaPrice] = useState({ ma8Price: 0, ma288Price: 0, })
   const [isShowLoading, setIsShowLoading] = useState(true)
@@ -240,9 +235,7 @@ export const Candle = memo(() => {
   }), []);
   const snap = useSnapshot(state)
   const flexStyle = FlexStyle()
-  const style = getCandleStyle(
-    getHeight(isShowCandle), getBackgroundColor(snap.isLight)
-  )
+  const style = getCandleStyle(getHeight(isShowCandle))
   useEffect(() => {
     const chartEl = document.getElementById('chart')
     createChartF(data, chartEl, isShowCandle, snap.isLight)
@@ -259,7 +252,8 @@ export const Candle = memo(() => {
       {(isShowLoading) ?
         <div className={cx(style.loadingC, flexStyle.fcc)}>
           <Loading width={30} border={3}></Loading>
-        </div> : (<>
+        </div> :
+        <>
           <div className={cx(style.button)}>
             {isShowCandle ?
               <Button onClick={() => setIsShowCandle(!isShowCandle)} style={{ width: '30px', height: '30px', padding: '0' }}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -275,8 +269,7 @@ export const Candle = memo(() => {
             <span style={{ color: getMaColor().ma8Color }}>{'MA(8): ' + Number(maPrice.ma8Price).toLocaleString('en-US')}</span>
             <span style={{ color: getMaColor().ma288Color }}>{'MA(288): ' + Number(maPrice.ma288Price).toLocaleString('en-US')}</span>
           </div>
-        </>)
-      }
+        </>}
     </div>
   </>)
 })

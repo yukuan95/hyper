@@ -1,5 +1,17 @@
+import { useConst, Color } from './Store'
 import { cx, css } from '@emotion/css'
 import { memo } from 'react'
+
+export const Line = memo(() => {
+  const width = useConst.width - useConst.paddingLeft - useConst.paddingRight
+  const line = css`
+    height: 1px;
+    width: ${width}px;
+    border-radius: 2px;
+    background-color: ${Color.blackGray};
+  `
+  return (<div className={line}></div>)
+})
 
 export const Loading = memo(({ width, border }: {
   width: number, border: number

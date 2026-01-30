@@ -15,6 +15,11 @@ export const FlexStyle = () => {
       justify-content: center;
       align-items: center;
     `,
+    fColumnCenter: css`
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    `,
     container: css`
       width: ${useConst.width}px;
       padding-left: ${useConst.paddingLeft}px;
