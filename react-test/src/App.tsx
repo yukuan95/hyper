@@ -111,6 +111,7 @@ const App = memo(() => {
         height: 100%;
         left: 0;
         top: 0;
+        background-color: ${(snap.isLight ? Color.white : Color.black).slice(0, -2) + 'CC'};
         backdrop-filter: blur(5px);
       `
     }

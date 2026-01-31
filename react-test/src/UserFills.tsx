@@ -85,8 +85,8 @@ export const UserFills = memo(() => {
   useEffect(() => {
     ; (async () => {
       getUserFillsData.res = await getUserFills()
-      store.state.isShowFills = true
       setIsShowTable2(true)
+      store.state.isShowFills = true
     })();
   }, [])
   const dataSource2 = useMemo(() => {
