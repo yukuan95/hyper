@@ -93,13 +93,34 @@ const _App = memo(() => {
   </>
 })
 
+let addFlag = false
+
+function preventDefault(e: any) {
+  e.preventDefault();
+}
+
+function disableScroll() {
+  if (addFlag === false) {
+    window.addEventListener('wheel', preventDefault, { passive: false });
+    window.addEventListener('touchmove', preventDefault, { passive: false });
+    addFlag = true
+  }
+}
+
+function enableScroll() {
+  window.removeEventListener('wheel', preventDefault);
+  window.removeEventListener('touchmove', preventDefault);
+}
+
 const App = memo(() => {
   const snap = useSnapshot(state)
   const f = FlexStyle()
   const isLoading = useMemo(() => {
     if (snap.isShowCandle && snap.isShowPrice && snap.isShowHistory && snap.isShowFills) {
+      enableScroll()
       return false
     }
+    disableScroll()
     return true
   }, [snap.isShowCandle, snap.isShowPrice, snap.isShowHistory, snap.isShowFills])
   const style = () => {
@@ -113,7 +134,6 @@ const App = memo(() => {
         top: 0;
         background-color: ${(snap.isLight ? Color.white : Color.black).slice(0, -2) + 'CC'};
         backdrop-filter: blur(5px);
-        overscroll-behavior: contain;
       `
     }
   }
