@@ -29,6 +29,60 @@ async function getValueHistory(): Promise<{
   }
 }
 
+function getChartOption(type: string, data: Array<any>, isLight: boolean): any {
+  return {
+    type: 'line', data: {
+      labels: data.map((item) => item.time.slice(0, 16)),
+      datasets: [{
+        data: data.map((item) => item.value),
+        pointRadius: 0, pointHoverRadius: 0, tension: 0.4,
+        borderWidth: 2,
+        backgroundColor: data.map((item) => {
+          if (type === 'Account Value') {
+            return '#4FC1FF'
+          }
+          if (item.value + 10 > 0) {
+            return store.Color.green
+          } else {
+            return store.Color.red
+          }
+        }),
+        segment: {
+          borderColor: (ctx: any) => {
+            if (type === 'Account Value') {
+              return '#4FC1FF'
+            }
+            const value = ctx.p1.parsed.y;
+            return value > 0 ? store.Color.green : store.Color.red;
+          },
+        }
+      }]
+    },
+    options: {
+      interaction: { mode: 'index', intersect: false },
+      animation: false, plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: {
+            color: isLight ? store.Color.blackGray : store.Color.whiteGray,
+            maxTicksLimit: 10, callback: function (value: any) {
+              const label = this.getLabelForValue(value)
+              return label.slice(8, 10)
+            }
+          } as any,
+          grid: { display: false, }
+        },
+        y: {
+          position: 'right',
+          ticks: {
+            color: isLight ? store.Color.blackGray : store.Color.whiteGray,
+          },
+        }
+      }
+    }
+  }
+}
+
 export const ValueHistory = memo(() => {
   const [data, setData] = useState({
     accountValue: [] as Array<{ key: string, time: string; value: number }>,
@@ -46,84 +100,35 @@ export const ValueHistory = memo(() => {
       setData(await getValueHistory() as any)
     })();
   }, [])
+  const snap = useSnapshot(store.state)
   useEffect(() => {
     chartEl.accountValueChartEl = document.getElementById('accountValueChart')
     if (data.accountValue.length > 0 && chartEl.accountValueChartEl && type === 'Account Value') {
-      chart.accountValueChart = new Chart(chartEl.accountValueChartEl, {
-        type: 'line', data: {
-          labels: data.accountValue.map((item) => item.time.slice(0, 16)),
-          datasets: [{
-            data: data.accountValue.map((item) => item.value),
-            pointRadius: 0,      // 普通状态下点的半径为 0
-            pointHoverRadius: 0  // 鼠标悬停时点也不显示（可选）
-          }]
-        }, options: {
-          interaction: {
-            mode: 'index',     // 只要鼠标进入 X 轴对应的纵向区域，就会触发
-            intersect: false   // 设置为 false，表示鼠标不需要直接碰到线/点也能触发
-          },
-          animation: false, plugins: { legend: { display: false } },
-          scales: {
-            x: {
-              ticks: {
-                maxTicksLimit: 10,
-                callback: function (value: any) {
-                  const label = this.getLabelForValue(value)
-                  return label.slice(8, 10)
-                }
-              } as any,
-              grid: {
-                display: false // 这将隐藏 X 轴所有的竖线
-              }
-            },
-            y: {
-              position: 'right', // 关键配置：将 Y 轴放在右侧
-            }
-          }
-        }
-      } as any)
+      if (chart.accountValueChart && chart.accountValueChart.destroy) {
+        chart.accountValueChart.destroy()
+      }
+      chart.accountValueChart = new Chart(
+        chartEl.accountValueChartEl,
+        getChartOption(type, data.accountValue, snap.isLight)
+      )
     }
     chartEl.totalPnLChartEl = document.getElementById('totalPnLChart')
     if (data.totalPnL.length > 0 && chartEl.totalPnLChartEl && type === 'Total PnL') {
-      chart.totalPnLChart = new Chart(chartEl.totalPnLChartEl, {
-        type: 'line', data: {
-          labels: data.totalPnL.map((item) => item.time.slice(0, 16)),
-          datasets: [{
-            data: data.totalPnL.map((item) => item.value),
-            pointRadius: 0,      // 普通状态下点的半径为 0
-            pointHoverRadius: 0  // 鼠标悬停时点也不显示（可选）
-          }]
-        }, options: {
-          interaction: {
-            mode: 'index',     // 只要鼠标进入 X 轴对应的纵向区域，就会触发
-            intersect: false   // 设置为 false，表示鼠标不需要直接碰到线/点也能触发
-          },
-          animation: false, plugins: { legend: { display: false } },
-          scales: {
-            x: {
-              ticks: {
-                maxTicksLimit: 10,
-                callback: function (value: any) {
-                  const label = this.getLabelForValue(value)
-                  return label.slice(8, 10)
-                }
-              } as any,
-              grid: {
-                display: false // 这将隐藏 X 轴所有的竖线
-              }
-            },
-            y: {
-              position: 'right', // 关键配置：将 Y 轴放在右侧
-            }
-          }
-        }
-      } as any)
+      if (chart.totalPnLChart && chart.totalPnLChart.destroy) {
+        chart.totalPnLChart.destroy()
+      }
+      chart.totalPnLChart = new Chart(
+        chartEl.totalPnLChartEl,
+        getChartOption(type, data.totalPnL, snap.isLight)
+      )
     }
-  }, [data.accountValue.length, data.totalPnL.length, type])
-  const snap = useSnapshot(store.state)
+  }, [data.accountValue.length, data.totalPnL.length, type, snap.isLight])
   const f = FlexStyle()
   function style() {
     return {
+      back: css`
+        background-color: ${snap.isLight ? '#F7F8F9' : '#1F262F'};
+      `,
       container: css`
         padding-left: 5px;
         padding-right: 5px;
@@ -139,7 +144,7 @@ export const ValueHistory = memo(() => {
   const a1 = store.CONST.AccountAddress.slice(0, 6)
   const a2 = store.CONST.AccountAddress.slice(-5, -1)
   return <div className={cx(f.container)}>
-    <div style={{ height: '15px' }}></div>
+    <div style={{ height: '10px' }}></div>
     <div className={cx(f.fsbc, s.container)}>
       <div className={s.font}>{a1}...{a2}</div>
       <div style={{ userSelect: 'none' }}>
@@ -153,12 +158,12 @@ export const ValueHistory = memo(() => {
         />
       </div>
     </div>
-    <div style={{ height: '15px' }}></div>
+    <div style={{ height: '10px' }}></div>
     {type === 'Total PnL' ? <>
-      <div><canvas id="totalPnLChart"></canvas></div>
+      <div className={s.back}><canvas id="totalPnLChart" height="150"></canvas></div>
     </> : <></>}
     {type === 'Account Value' ? <>
-      <div><canvas id="accountValueChart"></canvas></div>
+      <div className={s.back}><canvas id="accountValueChart" height="150"></canvas></div>
     </> : <></>}
   </div>
 })
