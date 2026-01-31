@@ -90,7 +90,7 @@ export const UserFills = memo(() => {
     })();
   }, [])
   const dataSource2 = useMemo(() => {
-    if (isShowTable2) {
+    if (isShowTable2 && yearMonth) {
       return getUserFillsData.res.filter((item: any) => {
         return item.time.slice(0, 7) === yearMonth
       })
@@ -134,7 +134,7 @@ export const UserFills = memo(() => {
         </Table>
       </> : <></>
     }
-    {isShowTable1 ? <>
+    {isShowTable2 ? <>
       <div style={{ height: '20px' }}></div>
       <div className={f.fsbc}>
         <div>
