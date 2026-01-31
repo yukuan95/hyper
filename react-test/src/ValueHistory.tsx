@@ -41,7 +41,7 @@ function getChartOption(type: string, data: Array<any>, isLight: boolean): any {
           if (type === 'Account Value') {
             return '#4FC1FF'
           }
-          if (item.value + 10 > 0) {
+          if (item.value > 0) {
             return store.Color.green
           } else {
             return store.Color.red
@@ -65,9 +65,9 @@ function getChartOption(type: string, data: Array<any>, isLight: boolean): any {
         x: {
           ticks: {
             color: isLight ? store.Color.blackGray : store.Color.whiteGray,
-            maxTicksLimit: 10, callback: function (value: any) {
+            maxTicksLimit: 5, callback: function (value: any) {
               const label = this.getLabelForValue(value)
-              return label.slice(8, 10)
+              return label.slice(5, 10)
             }
           } as any,
           grid: { display: false, }
