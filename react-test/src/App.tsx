@@ -113,6 +113,7 @@ const App = memo(() => {
         top: 0;
         background-color: ${(snap.isLight ? Color.white : Color.black).slice(0, -2) + 'CC'};
         backdrop-filter: blur(5px);
+        overscroll-behavior: contain;
       `
     }
   }

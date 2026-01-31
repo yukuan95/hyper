@@ -106,4 +106,5 @@ import{r as du,a as I,g as gu,T as hl,S as pu,F as ar,d as ll,D as mu,B as As,b 
         top: 0;
         background-color: ${(i.isLight?K.white:K.black).slice(0,-2)+"CC"};
         backdrop-filter: blur(5px);
+        overscroll-behavior: contain;
       `};return M.jsxs(M.Fragment,{children:[e?M.jsx("div",{className:it(n.loading,t.fcc),children:M.jsx(o1,{width:30,border:3})}):M.jsx(M.Fragment,{}),M.jsx("div",{children:M.jsx(Fx,{})})]})}),zx=I.memo(()=>{const i=We(U);I.useEffect(()=>{Ox(),Dx()},[]);const t=ie();return M.jsx(vu,{wave:{disabled:!0},theme:{algorithm:i.isLight?bo.defaultAlgorithm:bo.darkAlgorithm,components:{Tooltip:{colorBgSpotlight:i.isLight?K.white:K.blackGray,colorTextLightSolid:i.isLight?K.blackGray:K.white},Table:{cellPaddingBlockSM:0,headerBorderRadius:0}}},children:M.jsx("div",{className:t.fColumnCenter,children:M.jsx(Ix,{})})})});ll.locale("zh-cn");xu.createRoot(document.getElementById("root")).render(M.jsx(zx,{}));
