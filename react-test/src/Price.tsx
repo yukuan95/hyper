@@ -26,8 +26,6 @@ export const Price = memo(() => {
         align-items: center;
         grid-row-gap: 10px;
         grid-column-gap: 10px;
-        padding-left: 15px;
-        padding-right: 15px;
       `,
       jsStart: css`
         justify-self: start;

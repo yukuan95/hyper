@@ -25,5 +25,8 @@ export const FlexStyle = () => {
       padding-left: ${useConst.paddingLeft}px;
       padding-right: ${useConst.paddingRight}px;
     `,
+    columnHeight: css`
+      height: 30px;
+    `,
   }
 }

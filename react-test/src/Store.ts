@@ -2,6 +2,17 @@ import { subscribeKey } from 'valtio/utils'
 import { proxy } from 'valtio'
 import * as lib from './Lib'
 
+export const state = proxy({
+  isLight: window.matchMedia("(prefers-color-scheme: light)").matches as boolean,
+  candle: null as null | any, price: 0 as number, chg24Hour: 0 as number,
+  position: null as { entryPrice: string, positionValue: string, unrealizedPnl: string } | null,
+  isShowCandle: false, isShowPrice: false, isShowHistory: false, isShowPosition: false, isShowFills: false,
+})
+
+subscribeKey(state, 'isLight', () => {
+  document.body.style.backgroundColor = state.isLight ? Color.white : Color.black
+})
+
 export const useConst = {
   width: 355,
   paddingLeft: 5,
@@ -21,18 +32,6 @@ export async function fetchInfo(body: any): Promise<any> {
 export async function fetchUserInfo(body: any): Promise<any> {
   return await lib.fetchJson({ url: CONST.InfoUrl, body: { ...body, user: CONST.AccountAddress } })
 }
-
-export const state = proxy({
-  isLight: window.matchMedia("(prefers-color-scheme: light)").matches as boolean,
-  candle: null as null | any, price: 0 as number, chg24Hour: 0 as number,
-  position: null as { entryPrice: string, positionValue: string, unrealizedPnl: string } | null,
-  isShowCandle: false, isShowPrice: false,
-
-})
-
-subscribeKey(state, 'isLight', () => {
-  document.body.style.backgroundColor = state.isLight ? Color.white : Color.black
-})
 
 // @ts-ignore
 export enum Color {

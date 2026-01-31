@@ -70,3 +70,18 @@ export function stringTimePlus(stringTime: string, times: { days?: number, hours
 export function getTimezone() {
   return new Date().getTimezoneOffset() / (-60)
 }
+
+export function monthPlus(yearMonth: string, n: number): string {
+  let year = Number.parseInt(yearMonth.slice(0, 4))
+  let month = Number.parseInt(yearMonth.slice(5, 7))
+  month += n
+  while (month > 12) {
+    month -= 12
+    year += 1
+  }
+  while (month < 1) {
+    month += 12
+    year -= 1
+  }
+  return year + '-' + (String(month).length === 1 ? `0${month}` : `${month}`)
+}

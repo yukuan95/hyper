@@ -9,7 +9,7 @@ import { ThemeButton } from './Theme'
 import { Price } from './Price'
 import { numeral } from './Lib'
 import { Line } from './Comp'
-import { cx, css } from '@emotion/css'
+import { UserFills } from './UserFills'
 
 function initWebsocket() {
   const socket = new WebSocket(CONST.WsUrl)
@@ -57,7 +57,11 @@ function initWebsocket() {
           if (szi.at(0) === '-') {
             positionValue = '-' + positionValue
           }
-          state.position = { entryPrice: entryPx, positionValue, unrealizedPnl }
+          state.position = {
+            entryPrice: numeral(entryPx).format('0,0.0'),
+            positionValue: numeral(positionValue).format('0,0.0000'),
+            unrealizedPnl: numeral(unrealizedPnl).format('0,0.0000'),
+          }
         }
       }
     } catch { }
@@ -71,7 +75,6 @@ function initColorScheme() {
 }
 
 const App = memo(() => {
-  const snap = useSnapshot(state)
   return <>
     <div style={{ height: '10px' }}></div>
     <ThemeButton></ThemeButton>
@@ -84,6 +87,8 @@ const App = memo(() => {
     <div style={{ height: '10px' }}></div>
     <ValueHistory></ValueHistory>
     <div style={{ height: '10px' }}></div>
+    <UserFills></UserFills>
+    <div style={{ height: '300px' }}></div>
   </>
 })
 

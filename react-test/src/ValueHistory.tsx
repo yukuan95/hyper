@@ -5,8 +5,14 @@ import { FlexStyle } from './Css'
 import { Select } from 'antd'
 import { useSnapshot } from 'valtio'
 import { cx, css } from '@emotion/css'
-import { v4 as uuidv4 } from 'uuid'
 import Chart from 'chart.js/auto'
+import { Tooltip } from 'antd'
+
+// @ts-ignore
+enum HistoryType {
+  AccountValue = 'Account Value',
+  TotalPnL = 'TotalPnL',
+}
 
 async function getValueHistory(): Promise<{
   accountValue: Array<{ time: string, value: number }>;
@@ -19,12 +25,13 @@ async function getValueHistory(): Promise<{
   const his = res?.find((item: any) => item?.[0] === 'allTime')?.[1] ?? {}
   const accountValueHistory = his.accountValueHistory ?? []
   const pnlHistory = his.pnlHistory ?? []
+  store.state.isShowHistory = true
   return {
     accountValue: accountValueHistory.map((item: any) => {
-      return { key: uuidv4(), time: lib.milliTimeToStringTime(item[0]), value: Number(item[1]) }
+      return { time: lib.milliTimeToStringTime(item[0]), value: Number(item[1]) }
     }),
     totalPnL: pnlHistory.map((item: any) => {
-      return { key: uuidv4(), time: lib.milliTimeToStringTime(item[0]), value: Number(item[1]) }
+      return { time: lib.milliTimeToStringTime(item[0]), value: Number(item[1]) }
     })
   }
 }
@@ -38,7 +45,7 @@ function getChartOption(type: string, data: Array<any>, isLight: boolean): any {
         pointRadius: 0, pointHoverRadius: 0, tension: 0.4,
         borderWidth: 2,
         backgroundColor: data.map((item) => {
-          if (type === 'Account Value') {
+          if (type === HistoryType.AccountValue) {
             return '#4FC1FF'
           }
           if (item.value > 0) {
@@ -49,7 +56,7 @@ function getChartOption(type: string, data: Array<any>, isLight: boolean): any {
         }),
         segment: {
           borderColor: (ctx: any) => {
-            if (type === 'Account Value') {
+            if (type === HistoryType.AccountValue) {
               return '#4FC1FF'
             }
             const value = ctx.p1.parsed.y;
@@ -88,7 +95,7 @@ export const ValueHistory = memo(() => {
     accountValue: [] as Array<{ key: string, time: string; value: number }>,
     totalPnL: [] as Array<{ key: string, time: string; value: number }>,
   })
-  const [type, setType] = useState('Total PnL')
+  const [type, setType] = useState(HistoryType.TotalPnL)
   const chartEl = useMemo(() => {
     return { totalPnLChartEl: null as null | any, accountValueChartEl: null as null | any }
   }, [])
@@ -103,7 +110,7 @@ export const ValueHistory = memo(() => {
   const snap = useSnapshot(store.state)
   useEffect(() => {
     chartEl.accountValueChartEl = document.getElementById('accountValueChart')
-    if (data.accountValue.length > 0 && chartEl.accountValueChartEl && type === 'Account Value') {
+    if (data.accountValue.length > 0 && chartEl.accountValueChartEl && type === HistoryType.AccountValue) {
       if (chart.accountValueChart && chart.accountValueChart.destroy) {
         chart.accountValueChart.destroy()
       }
@@ -113,7 +120,7 @@ export const ValueHistory = memo(() => {
       )
     }
     chartEl.totalPnLChartEl = document.getElementById('totalPnLChart')
-    if (data.totalPnL.length > 0 && chartEl.totalPnLChartEl && type === 'Total PnL') {
+    if (data.totalPnL.length > 0 && chartEl.totalPnLChartEl && type === HistoryType.TotalPnL) {
       if (chart.totalPnLChart && chart.totalPnLChart.destroy) {
         chart.totalPnLChart.destroy()
       }
@@ -131,8 +138,6 @@ export const ValueHistory = memo(() => {
         user-select: none;
       `,
       container: css`
-        padding-left: 5px;
-        padding-right: 5px;
       `,
       font: css`
         font-size: 17px;
@@ -143,28 +148,32 @@ export const ValueHistory = memo(() => {
   }
   const s = style()
   const a1 = store.CONST.AccountAddress.slice(0, 6)
-  const a2 = store.CONST.AccountAddress.slice(-5, -1)
+  const a2 = store.CONST.AccountAddress.slice(-4, store.CONST.AccountAddress.length)
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+  const trigger = isTouchDevice ? 'click' : 'hover'
   return <div className={cx(f.container)}>
     <div style={{ height: '10px' }}></div>
     <div className={cx(f.fsbc, s.container)}>
-      <div className={s.font}>{a1}...{a2}</div>
+      <div className={s.font}>
+        <Tooltip trigger={trigger} title={store.CONST.AccountAddress}>{a1}...{a2}</Tooltip>
+      </div>
       <div style={{ userSelect: 'none' }}>
         <Select
           defaultValue={type} style={{ width: 150 }}
           onChange={(e) => setType(e)} value={type}
           options={[
-            { value: 'Account Value', label: 'Account Value' },
-            { value: 'Total PnL', label: 'Total PnL' }
+            { value: HistoryType.AccountValue, label: HistoryType.AccountValue },
+            { value: HistoryType.TotalPnL, label: HistoryType.TotalPnL }
           ]}
         />
       </div>
     </div>
     <div style={{ height: '10px' }}></div>
-    {type === 'Total PnL' ? <>
-      <div className={s.back}><canvas id="totalPnLChart" height="150"></canvas></div>
+    {type === HistoryType.TotalPnL ? <>
+      <div className={s.back}><canvas id="totalPnLChart" height="130"></canvas></div>
     </> : <></>}
-    {type === 'Account Value' ? <>
-      <div className={s.back}><canvas id="accountValueChart" height="150"></canvas></div>
+    {type === HistoryType.AccountValue ? <>
+      <div className={s.back}><canvas id="accountValueChart" height="130"></canvas></div>
     </> : <></>}
   </div>
 })
