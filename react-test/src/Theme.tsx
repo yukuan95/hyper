@@ -1,14 +1,20 @@
 import { cx, css } from '@emotion/css'
 import { useEffect, memo } from 'react'
 import { state } from './Store'
+import { Switch } from 'antd'
+import { useSnapshot } from 'valtio'
+import { FlexStyle } from './Css'
 
 export const ThemeButton = memo(() => {
-  const button = css`
-    position: fixed;
-    top: 0;
-    left: 0;
-  `
+  const snap = useSnapshot(state)
+  const f = FlexStyle()
   return <>
-    <button className={button} onClick={() => state.isLight = !state.isLight}>button</button>
+    <div className={f.container} style={{ display: 'flex', justifyContent: 'end' }}>
+      <Switch
+        checked={!snap.isLight}
+        onChange={() => {
+          state.isLight = !state.isLight
+        }} checkedChildren="Dark" unCheckedChildren="Light" />
+    </div>
   </>
 })

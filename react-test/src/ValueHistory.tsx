@@ -128,6 +128,7 @@ export const ValueHistory = memo(() => {
     return {
       back: css`
         background-color: ${snap.isLight ? '#F7F8F9' : '#1F262F'};
+        user-select: none;
       `,
       container: css`
         padding-left: 5px;
