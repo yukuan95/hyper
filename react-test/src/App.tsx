@@ -1,15 +1,16 @@
+import { useEffect, memo, useMemo } from 'react'
 import { ValueHistory } from './ValueHistory'
 import { state, Color, CONST } from './Store'
 import { ConfigProvider, theme } from 'antd'
-import { useEffect, memo } from 'react'
+import { UserFills } from './UserFills'
+import { cx, css } from '@emotion/css'
+import { Line, Loading } from './Comp'
+import { ThemeButton } from './Theme'
 import { useSnapshot } from 'valtio'
 import { FlexStyle } from './Css'
 import { Candle } from './Candle'
-import { ThemeButton } from './Theme'
 import { Price } from './Price'
 import { numeral } from './Lib'
-import { Line } from './Comp'
-import { UserFills } from './UserFills'
 
 function initWebsocket() {
   const socket = new WebSocket(CONST.WsUrl)
@@ -74,7 +75,7 @@ function initColorScheme() {
   themeMedia.onchange = ({ matches }) => state.isLight = matches
 }
 
-const App = memo(() => {
+const _App = memo(() => {
   return <>
     <div style={{ height: '10px' }}></div>
     <ThemeButton></ThemeButton>
@@ -89,6 +90,35 @@ const App = memo(() => {
     <div style={{ height: '10px' }}></div>
     <UserFills></UserFills>
     <div style={{ height: '300px' }}></div>
+  </>
+})
+
+const App = memo(() => {
+  const snap = useSnapshot(state)
+  const f = FlexStyle()
+  const isLoading = useMemo(() => {
+    if (snap.isShowCandle && snap.isShowPrice && snap.isShowHistory && snap.isShowFills) {
+      return false
+    }
+    return true
+  }, [snap.isShowCandle, snap.isShowPrice, snap.isShowHistory, snap.isShowFills])
+  const style = () => {
+    return {
+      loading: css`
+        position: fixed;
+        z-index: 3;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        top: 0;
+        backdrop-filter: blur(5px);
+      `
+    }
+  }
+  const s = style()
+  return <>
+    {isLoading ? <div className={cx(s.loading, f.fcc)}><Loading width={30} border={3}></Loading></div> : <></>}
+    <div><_App></_App></div>
   </>
 })
 

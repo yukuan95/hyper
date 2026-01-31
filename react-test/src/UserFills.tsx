@@ -1,12 +1,13 @@
+import { memo, useEffect, useMemo, useState, useCallback } from 'react'
+import { DatePicker, Button, Tooltip, Table } from 'antd'
+import { cx, css } from '@emotion/css'
+import { useSnapshot } from 'valtio'
+import { v4 as uuidv4 } from 'uuid'
+import { FlexStyle } from './Css'
 import * as store from './Store'
 import * as lib from './Lib'
-import { v4 as uuidv4 } from 'uuid'
-import { memo, useEffect, useMemo, useState, useCallback } from 'react'
-import { FlexStyle } from './Css'
-import { useSnapshot } from 'valtio'
-import { cx, css } from '@emotion/css'
-import { DatePicker, Button, Tooltip, Table } from 'antd'
 import dayjs from 'dayjs'
+
 const { Column } = Table
 
 const ArrowButtonStyle = () => {
@@ -160,7 +161,7 @@ export const UserFills = memo(() => {
           {item.time.slice(0, 16)}
         </>)}></Column>
         <Column className={cx(f.columnHeight)} align="center" title="price" dataIndex="price" render={(_, item) => (<>
-          <Tooltip trigger={trigger} title={<>
+          <Tooltip mouseEnterDelay={0} trigger={trigger} title={<>
             <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto', justifyItems: 'center' }}>
               <div>fee</div>
               <div style={{ whiteSpace: 'pre' }}> : </div>

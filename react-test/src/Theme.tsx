@@ -1,8 +1,8 @@
-import { memo } from 'react'
-import { state } from './Store'
-import { Switch } from 'antd'
 import { useSnapshot } from 'valtio'
 import { FlexStyle } from './Css'
+import { state } from './Store'
+import { Switch } from 'antd'
+import { memo } from 'react'
 
 export const ThemeButton = memo(() => {
   const snap = useSnapshot(state)

@@ -1,12 +1,12 @@
-import * as store from './Store'
-import * as lib from './Lib'
 import { memo, useEffect, useMemo, useState } from 'react'
-import { FlexStyle } from './Css'
-import { Select } from 'antd'
-import { useSnapshot } from 'valtio'
 import { cx, css } from '@emotion/css'
+import { useSnapshot } from 'valtio'
+import { FlexStyle } from './Css'
 import Chart from 'chart.js/auto'
+import * as store from './Store'
 import { Tooltip } from 'antd'
+import { Select } from 'antd'
+import * as lib from './Lib'
 
 // @ts-ignore
 enum HistoryType {
@@ -155,7 +155,7 @@ export const ValueHistory = memo(() => {
     <div style={{ height: '10px' }}></div>
     <div className={cx(f.fsbc, s.container)}>
       <div className={s.font}>
-        <Tooltip trigger={trigger} title={store.CONST.AccountAddress}>{a1}...{a2}</Tooltip>
+        <Tooltip mouseEnterDelay={0} trigger={trigger} title={store.CONST.AccountAddress}>{a1}...{a2}</Tooltip>
       </div>
       <div style={{ userSelect: 'none' }}>
         <Select
