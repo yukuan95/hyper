@@ -25,7 +25,9 @@ export async function fetchUserInfo(body: any): Promise<any> {
 export const state = proxy({
   isLight: window.matchMedia("(prefers-color-scheme: light)").matches as boolean,
   candle: null as null | any, price: 0 as number, chg24Hour: 0 as number,
-  position: null as { entryPrice: string, positionValue: string, unrealizedPnl: string } | null
+  position: null as { entryPrice: string, positionValue: string, unrealizedPnl: string } | null,
+  isShowCandle: false, isShowPrice: false,
+
 })
 
 subscribeKey(state, 'isLight', () => {

@@ -1,12 +1,15 @@
+import { ValueHistory } from './ValueHistory'
 import { state, Color, CONST } from './Store'
 import { ConfigProvider, theme } from 'antd'
 import { useEffect, memo } from 'react'
 import { useSnapshot } from 'valtio'
 import { FlexStyle } from './Css'
 import { Candle } from './Candle'
+import { ThemeButton } from './Theme'
 import { Price } from './Price'
 import { numeral } from './Lib'
 import { Line } from './Comp'
+import { cx, css } from '@emotion/css'
 
 function initWebsocket() {
   const socket = new WebSocket(CONST.WsUrl)
@@ -68,14 +71,19 @@ function initColorScheme() {
 }
 
 const App = memo(() => {
+  const snap = useSnapshot(state)
   return <>
-    <div><button onClick={() => state.isLight = !state.isLight}>button</button></div>
-    <div style={{ height: '30px' }}></div>
+    <div style={{ height: '10px' }}></div>
+    <ThemeButton></ThemeButton>
+    <div style={{ height: '10px' }}></div>
     <Price></Price>
-    <div style={{ height: '15px' }}></div>
+    <div style={{ height: '10px' }}></div>
     <Line></Line>
-    <div style={{ height: '15px' }}></div>
+    <div style={{ height: '10px' }}></div>
     <Candle></Candle>
+    <div style={{ height: '10px' }}></div>
+    <ValueHistory></ValueHistory>
+    <div style={{ height: '10px' }}></div>
   </>
 })
 
