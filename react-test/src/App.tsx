@@ -13,7 +13,7 @@ import { Price } from './Price'
 import { numeral } from './Lib'
 
 async function getFonts(): Promise<void> {
-  const font = new FontFace("TAHOMA", "url(/hyper/src/assets/TAHOMA.ttf)")
+  const font = new FontFace("TAHOMA", "url(/hyper/TAHOMA.ttf)")
   document.fonts.add(font)
   font.load()
   await font.loaded
