@@ -93,6 +93,14 @@ export const UserFills = memo(() => {
     if (isShowTable2 && yearMonth) {
       return getUserFillsData.res.filter((item: any) => {
         return item.time.slice(0, 7) === yearMonth
+      }).map((item: any) => {
+        const { key, time, side, price, size, fee, closedPnl } = item
+        return {
+          key, time, side, price: lib.numeral(price).format('0,0'),
+          size: lib.numeral(size).format('0,0.00000'),
+          fee: lib.numeral(fee).format('0,0.00000'),
+          closedPnl: lib.numeral(closedPnl).format('0,0.00000'),
+        }
       })
     }
   }, [isShowTable2, yearMonth])
@@ -171,7 +179,7 @@ export const UserFills = memo(() => {
               <div>{item.closedPnl}</div>
             </div>
           </>} placement='left'>
-            {lib.numeral(item.price).format('0,0')}
+            {item.price}
           </Tooltip>
         </>)}></Column>
         <Column className={cx(f.columnHeight)} align="center" title="side" dataIndex="side"></Column>
