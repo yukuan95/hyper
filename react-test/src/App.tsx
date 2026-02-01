@@ -12,6 +12,13 @@ import { Candle } from './Candle'
 import { Price } from './Price'
 import { numeral } from './Lib'
 
+async function getFonts(): Promise<void> {
+  const font = new FontFace("TAHOMA", "url(/hyper/src/assets/TAHOMA.ttf)")
+  document.fonts.add(font)
+  font.load()
+  await font.loaded
+}
+
 function initWebsocket() {
   const socket = new WebSocket(CONST.WsUrl)
   socket.onopen = () => {
@@ -147,6 +154,7 @@ const App = memo(() => {
 export default memo(() => {
   const snap = useSnapshot(state)
   useEffect(() => {
+    getFonts()
     initColorScheme()
     initWebsocket()
   }, [])
@@ -155,6 +163,9 @@ export default memo(() => {
     <ConfigProvider
       wave={{ disabled: true }}
       theme={{
+        token: {
+          fontFamily: 'TAHOMA, Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft Yahei", Helvetica Neue, Helvetica, NotoSans,   Arial, SimSun, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+        },
         algorithm: snap.isLight ? theme.defaultAlgorithm : theme.darkAlgorithm,
         components: {
           Tooltip: {
