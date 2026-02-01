@@ -11,7 +11,7 @@ import * as lib from './Lib'
 // @ts-ignore
 enum HistoryType {
   AccountValue = 'Account Value',
-  TotalPnL = 'TotalPnL',
+  TotalPnL = 'Total PnL',
 }
 
 async function getValueHistory(): Promise<{
