@@ -19,6 +19,7 @@ const ArrowButtonStyle = () => {
     `
   }
 }
+
 // @ts-ignore
 export enum ArrowSvgName {
   rightArrow = 'rightArrow',
@@ -87,6 +88,10 @@ export const UserFills = memo(() => {
       getUserFillsData.res = await getUserFills()
       setIsShowTable2(true)
       store.state.isShowFills = true
+      const time = getUserFillsData.res?.at(-1)?.time
+      if (time) {
+        setYearMonth(time.slice(0, 7))
+      }
     })();
   }, [])
   const dataSource2 = useMemo(() => {
