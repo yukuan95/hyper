@@ -214,6 +214,7 @@ async function getUserFills(): Promise<{
       side: side, price: Number(item.px),
       closedPnl: Number(item.closedPnl),
       fee: Number(item.fee), size: Number(item.sz),
+      dir: item.dir
     }
   })
   data = data.reverse()
@@ -229,7 +230,13 @@ async function getUserFills(): Promise<{
   data = []
   for (const value of m.values()) {
     const time = value[0].time
-    const side = value[0].side
+    let side = value[0].side
+    if (value.every((item) => item.dir === 'Close Long')) {
+      side = 'Hedge'
+    }
+    if (value.every((item) => item.dir === 'Close Short')) {
+      side = 'Hedge'
+    }
     const priceTotal = value.map((item) => item.price).reduce((a, b) => a + b, 0)
     const price = Number.parseInt('' + priceTotal / value.length)
     const size = value.map((item) => item.size).reduce((a, b) => lib.add(a, b), 0)
